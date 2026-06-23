@@ -2,6 +2,7 @@
 const nextConfig = {
   output: 'export',
   basePath: '/fitness-training-system',
+  trailingSlash: true,
   images: { unoptimized: true },
 };
 
