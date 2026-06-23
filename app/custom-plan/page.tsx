@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import type { WeeklyPlan, TrainingDay, WorkoutExercise, RPELevel } from '@/types';
 import { exerciseLibrary, getExerciseById } from '@/data/exercises';
 import { weeklyPlans } from '@/data/trainingPlans';
@@ -67,15 +66,12 @@ function makeEmptyExercise(): WorkoutExercise {
 // ============================================================
 
 function CustomPlanPage() {
-  const searchParams = useSearchParams();
-  const editParam = searchParams.get('edit');
-  const importParam = searchParams.get('import');
-
   const [mode, setMode] = useState<'visual' | 'paste' | 'import'>('import');
   const [savedPlans, setSavedPlans] = useState<WeeklyPlan[]>([]);
   const [editPlan, setEditPlan] = useState<WeeklyPlan | null>(null);
   const [showSaved, setShowSaved] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
+  const [urlParamsChecked, setUrlParamsChecked] = useState(false);
 
   // ---- 可视化编辑器状态 ----
   const [planName, setPlanName] = useState('');
@@ -93,8 +89,14 @@ function CustomPlanPage() {
   // 初始化
   useEffect(() => { setSavedPlans(loadPlans()); }, []);
 
-  // 从 URL 参数加载本地保存的计划
+  // 从 URL 参数加载（不使用 useSearchParams，避免静态导出时 Suspense 问题）
   useEffect(() => {
+    if (urlParamsChecked || typeof window === 'undefined') return;
+    setUrlParamsChecked(true);
+    const sp = new URLSearchParams(window.location.search);
+    const editParam = sp.get('edit');
+    const importParam = sp.get('import');
+
     if (editParam) {
       const all = loadPlans();
       const target = all.find(p => p.id === editParam);
@@ -103,10 +105,6 @@ function CustomPlanPage() {
         setMode('visual');
       }
     }
-  }, [editParam]);
-
-  // 从训练计划库导入预设计划
-  useEffect(() => {
     if (importParam) {
       const preset = weeklyPlans.find(p => p.id === importParam);
       if (preset) {
@@ -120,7 +118,7 @@ function CustomPlanPage() {
         setMode('visual');
       }
     }
-  }, [importParam]);
+  }, [urlParamsChecked]);
 
   // 编辑已有计划时重置编辑器
   useEffect(() => {
@@ -659,13 +657,4 @@ function CustomPlanPage() {
   );
 }
 
-// Suspense boundary for useSearchParams
-function CustomPlanPageWrapper() {
-  return (
-    <Suspense fallback={<div className="text-gym-muted text-sm text-center py-12">加载中...</div>}>
-      <CustomPlanPage />
-    </Suspense>
-  );
-}
-
-export default CustomPlanPageWrapper;
+export default CustomPlanPage;

@@ -3,17 +3,22 @@
 import { trainingGoals, trainingTheories } from '@/data/goals';
 import GoalSelector from '@/components/GoalSelector';
 import TheoryCard from '@/components/TheoryCard';
-import { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
-function GoalSystemContent() {
-  const searchParams = useSearchParams();
-  const initialSelect = searchParams.get('select');
-  const initialTab = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState<'goals' | 'theory'>(
-    initialTab === 'theory' ? 'theory' : 'goals'
-  );
-  const [selectedGoal, setSelectedGoal] = useState<string | null>(initialSelect);
+export default function GoalSystemPage() {
+  const [activeTab, setActiveTab] = useState<'goals' | 'theory'>('goals');
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
+  const [init, setInit] = useState(false);
+
+  useEffect(() => {
+    if (init || typeof window === 'undefined') return;
+    setInit(true);
+    const sp = new URLSearchParams(window.location.search);
+    const s = sp.get('select');
+    const t = sp.get('tab');
+    if (s) setSelectedGoal(s);
+    if (t === 'theory') setActiveTab('theory');
+  }, [init]);
 
   return (
     <div className="space-y-5">
@@ -24,14 +29,11 @@ function GoalSystemContent() {
         </p>
       </div>
 
-      {/* Tab 切换 */}
       <div className="flex gap-1 bg-gym-card rounded-xl p-1 border border-gym-border">
         <button
           onClick={() => setActiveTab('goals')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === 'goals'
-              ? 'bg-primary-600 text-white'
-              : 'text-gym-muted hover:text-white'
+            activeTab === 'goals' ? 'bg-primary-600 text-white' : 'text-gym-muted hover:text-white'
           }`}
         >
           🎯 训练目标
@@ -39,16 +41,13 @@ function GoalSystemContent() {
         <button
           onClick={() => setActiveTab('theory')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === 'theory'
-              ? 'bg-primary-600 text-white'
-              : 'text-gym-muted hover:text-white'
+            activeTab === 'theory' ? 'bg-primary-600 text-white' : 'text-gym-muted hover:text-white'
           }`}
         >
           📖 训练理论
         </button>
       </div>
 
-      {/* 目标选择 */}
       {activeTab === 'goals' && (
         <div className="space-y-4">
           {trainingGoals.map((goal) => (
@@ -62,7 +61,6 @@ function GoalSystemContent() {
         </div>
       )}
 
-      {/* 训练理论 */}
       {activeTab === 'theory' && (
         <div className="space-y-3">
           {trainingTheories.map((theory) => (
@@ -71,13 +69,5 @@ function GoalSystemContent() {
         </div>
       )}
     </div>
-  );
-}
-
-export default function GoalSystemPage() {
-  return (
-    <Suspense fallback={<div className="text-gym-muted text-sm">Loading...</div>}>
-      <GoalSystemContent />
-    </Suspense>
   );
 }

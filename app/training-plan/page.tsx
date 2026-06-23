@@ -1,7 +1,6 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
-import { Suspense, useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { trainingGoals } from '@/data/goals';
 import { weeklyPlans } from '@/data/trainingPlans';
@@ -22,10 +21,17 @@ const goalLabels: Record<string, string> = {
 };
 
 function TrainingPlanContent() {
-  const searchParams = useSearchParams();
-  const goalParam = searchParams.get('goal');
-  const [filterGoal, setFilterGoal] = useState<string | null>(goalParam);
+  const [filterGoal, setFilterGoal] = useState<string | null>(null);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (initialized || typeof window === 'undefined') return;
+    setInitialized(true);
+    const sp = new URLSearchParams(window.location.search);
+    const gp = sp.get('goal');
+    if (gp) setFilterGoal(gp);
+  }, [initialized]);
 
   const filteredPlans = useMemo(() => {
     if (!filterGoal) return weeklyPlans;
@@ -221,10 +227,4 @@ function TrainingPlanContent() {
   );
 }
 
-export default function TrainingPlanPage() {
-  return (
-    <Suspense fallback={<div className="text-gym-muted text-sm">Loading...</div>}>
-      <TrainingPlanContent />
-    </Suspense>
-  );
-}
+export default TrainingPlanContent;
