@@ -1,9 +1,14 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { exerciseLibrary, getExercisesByMuscle } from '@/data/exercises';
+import { exerciseLibrary } from '@/data/exercises';
+import { extendedExerciseLibrary } from '@/data/exercises-db';
 import ExerciseCard from '@/components/ExerciseCard';
 import type { MuscleGroup, ExerciseCategory } from '@/types';
+
+const allExercises = [...exerciseLibrary, ...extendedExerciseLibrary].filter(
+  (e, i, arr) => arr.findIndex(x => x.id === e.id) === i // 去重
+);
 
 const muscleOptions: { value: string; label: string }[] = [
   { value: 'all', label: '全部' },
@@ -36,7 +41,7 @@ export default function ExerciseLibraryPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
 
   const filteredExercises = useMemo(() => {
-    let list = [...exerciseLibrary];
+    let list = [...allExercises];
 
     // 搜索
     if (search.trim()) {
@@ -71,12 +76,17 @@ export default function ExerciseLibraryPage() {
     return list;
   }, [search, muscleFilter, difficultyFilter, categoryFilter]);
 
+  // 只显示前 200 个（性能优化），搜索时无限制
+  const displayExercises = search.trim() || muscleFilter !== 'all' || difficultyFilter !== 'all' || categoryFilter !== 'all'
+    ? filteredExercises
+    : filteredExercises.slice(0, 200);
+
   return (
     <div className="space-y-4">
       <div>
         <h1 className="font-bold text-2xl text-white">📚 动作库</h1>
         <p className="text-sm text-gym-muted mt-1">
-          共 {exerciseLibrary.length} 个动作 | 复合 {exerciseLibrary.filter((e) => e.category === 'compound').length} 个 | 孤立{' '}
+          共 {exerciseLibrary.length} 个动作 | 复合 {allExercises.filter((e) => e.category === 'compound').length} 个 | 孤立{' '}
           {exerciseLibrary.filter((e) => e.category === 'isolation').length} 个
         </p>
       </div>
